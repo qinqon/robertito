@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:property name="chassis_length" value="0.280" />`
+    <xacro:property name="chassis_width" value="0.230" />`
+    <xacro:property name="chassis_height" value="0.080" />`
+    <xacro:property name="steering_joint_x" value="0.140" />`
+    <xacro:property name="steering_joint_y" value="0.115" />`
+    <xacro:property name="steering_joint_z" value="0.045" />`
+</robot>
