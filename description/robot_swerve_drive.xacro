@@ -30,15 +30,28 @@
         <gazebo reference="${name}_steering">
             <material>Gazebo/Yellow</material>
         </gazebo>
-    <gazebo>
-        <plugin name="gazebo_ros_joint_state_publisher_${name}"
-            filename="libgazebo_ros_joint_state_publisher.so">
-            <update_rate>20</update_rate>
-            <joint_name>${name}_wheel_joint</joint_name>
-            <joint_name>${name}_steering_joint</joint_name>
-        </plugin>
-    </gazebo>
+</xacro:macro>
 
-
+    <xacro:macro name="swerve_drive_ros2_control" params="name">
+        <joint name="${name}_wheel_joint">
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="max">10</param>
+            </command_interface>
+            <state_interface name="position" />
+            <state_interface name="velocity" />
+        </joint>
+        <joint name="${name}_steering_joint">
+            <command_interface name="position">
+                <param name="min">${-pi/3}</param>
+                <param name="max">${pi/3}</param>
+            </command_interface>
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="max">10</param>
+            </command_interface>
+            <state_interface name="position" />
+            <state_interface name="velocity" />
+        </joint>
     </xacro:macro>
 </robot>

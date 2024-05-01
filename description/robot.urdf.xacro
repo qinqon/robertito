@@ -5,5 +5,7 @@
     <xacro:include filename="robot_properties.xacro" />
     <xacro:include filename="robot_swerve_drive.xacro" />
     <xacro:include filename="robot_core.xacro" />
+    <xacro:include filename="ros2_control.xacro"/>
+    <!--xacro:include filename="sim_control.xacro" /-->
     
 </robot>
