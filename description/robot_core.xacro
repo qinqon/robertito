@@ -47,5 +47,20 @@
 <xacro:swerve_drive name="front_left" x="1" y="-1" z="-1" r="1"/>
 <xacro:swerve_drive name="rear_left" x="-1" y="-1" z="-1" r="1"/>
 
+<gazebo reference="base_link">
+    <material>Gazebo/Green</material>
+</gazebo>
+
+<gazebo reference="chassis">
+    <material>Gazebo/Blue</material>
+</gazebo>
+
+<gazebo>
+        <plugin name="gazebo_ros_joint_pose_trajectory"
+            filename="libgazebo_ros_joint_pose_trajectory.so">
+            <update_rate>2</update_rate>
+        </plugin>
+    </gazebo>
+
 </robot>
 
