@@ -43,7 +43,7 @@
 </link>
 
 <xacro:swerve_drive name="front_right" x="1" y="1" z="-1" r="-1"/>
-<xacro:swerve_drive name="rear_right" x="-1" y="1" z="-1" r="-1"/>
+<xacro:swerve_drive name="rear_right" x="-1" y="1" z="-1" r="1"/>
 <xacro:swerve_drive name="front_left" x="1" y="-1" z="-1" r="1"/>
 <xacro:swerve_drive name="rear_left" x="-1" y="-1" z="-1" r="1"/>
 
