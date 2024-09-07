@@ -27,101 +27,33 @@
     <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-            <box size="0.280 0.230 0.080"/>
+            <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
         </geometry>
         <material name="white"/>
     </visual>
+    <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+            <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+        </geometry>
+    </collision>
+    <xacro:inertial_box mass="0.5" x="${chassis_length}" y="${chassis_width}" z="${chassis_height}">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </xacro:inertial_box>
 </link>
 
+<xacro:swerve_drive name="front_right" x="1" y="1" z="-1" r="-1"/>
+<xacro:swerve_drive name="rear_right" x="-1" y="1" z="-1" r="1"/>
+<xacro:swerve_drive name="front_left" x="1" y="-1" z="-1" r="1"/>
+<xacro:swerve_drive name="rear_left" x="-1" y="-1" z="-1" r="1"/>
 
-<link name="front_right_wheel">
-    <xacro:include filename="robot_wheel.xacro" />
-</link>
+<gazebo reference="base_link">
+    <material>Gazebo/Green</material>
+</gazebo>
 
-<link name="front_right_steering">
-    <xacro:include filename="robot_steering.xacro" />
-</link>
-
-<joint name="front_right_steering_joint" type="fixed">
-	<parent link="chassis"/>
-    	<child link="front_right_steering"/>
-	<origin xyz="0.140 0.115 -0.045"/>
-</joint>
-
-
-<joint name="front_right_wheel_joint" type="fixed">
-	<parent link="front_right_steering"/>
-    	<child link="front_right_wheel"/>
-	<origin xyz="0 0 -0.025" rpy="-${pi/2} 0 0"/>
-</joint>
-
-
-<link name="rear_right_wheel">
-    <xacro:include filename="robot_wheel.xacro" />
-</link>
-
-<link name="rear_right_steering">
-    <xacro:include filename="robot_steering.xacro" />
-</link>
-
-<joint name="rear_right_steering_joint" type="fixed">
-	<parent link="chassis"/>
-    	<child link="rear_right_steering"/>
-	<origin xyz="-0.140 0.115 -0.045"/>
-</joint>
-
-<joint name="rear_right_wheel_joint" type="fixed">
-	<parent link="rear_right_steering"/>
-    	<child link="rear_right_wheel"/>
-	<origin xyz="0 0 -0.025" rpy="-${pi/2} 0 0"/>
-</joint>
-
-<link name="front_left_wheel">
-    <xacro:include filename="robot_wheel.xacro" />
-</link>
-
-<link name="front_left_steering">
-    <xacro:include filename="robot_steering.xacro" />
-</link>
-
-<joint name="front_left_steering_joint" type="fixed">
-	<parent link="chassis"/>
-    	<child link="front_left_steering"/>
-	<origin xyz="0.140 -0.115 -0.045"/>
-</joint>
-
-<joint name="front_left_wheel_joint" type="fixed">
-	<parent link="front_left_steering"/>
-    	<child link="front_left_wheel"/>
-	<origin xyz="0 0 -0.025" rpy="${pi/2} 0 0"/>
-</joint>
-
-<joint name="front_left_wheel_join" type="fixed">
-	<parent link="chassis"/>
-    	<child link="front_left_wheel"/>
-    	<origin xyz="0.140 -0.115 -0.065" rpy="${pi/2} 0 0"/>
-	<axis xyz="0 0 1"/>
-</joint>
-
-<link name="rear_left_wheel">
-    <xacro:include filename="robot_wheel.xacro" />
-</link>
-
-<link name="rear_left_steering">
-    <xacro:include filename="robot_steering.xacro" />
-</link>
-
-<joint name="rear_left_steering_joint" type="fixed">
-	<parent link="chassis"/>
-    	<child link="rear_left_steering"/>
-	<origin xyz="-0.140 -0.115 -0.045"/>
-</joint>
-
-<joint name="rear_left_wheel_joint" type="fixed">
-	<parent link="rear_left_steering"/>
-    	<child link="rear_left_wheel"/>
-	<origin xyz="0 0 -0.025" rpy="${pi/2} 0 0"/>
-</joint>
+<gazebo reference="chassis">
+    <material>Gazebo/Blue</material>
+</gazebo>
 
 </robot>
 

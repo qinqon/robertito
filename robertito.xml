@@ -1,0 +1,9 @@
+<library path="robertito">
+  <class name="robertito/RobertitoDriver"
+         type="robertito::RobertitoDriver"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+    	Communicate with the micro ros topics from robertito esp32s3 microprocesor
+    </description>
+  </class>
+</library>

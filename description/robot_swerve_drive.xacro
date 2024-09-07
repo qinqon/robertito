@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="swerve_drive" params="name x y z r">
+        <link name="${name}_wheel">
+            <xacro:include filename="robot_wheel.xacro" />
+        </link>
+
+        <link name="${name}_steering">
+            <xacro:include filename="robot_steering.xacro" />
+        </link>
+
+        <joint name="${name}_steering_joint" type="revolute">
+            <parent link="chassis"/>
+                <child link="${name}_steering"/>
+                <origin xyz="${x*steering_joint_x} ${y*steering_joint_y} ${z*steering_joint_z}"/>
+                <limit effort="1000.0" lower="${-pi/3}" upper="${pi/3}" velocity="0.1"/>
+            <axis xyz="0 0 -1"/>
+        </joint>
+
+
+        <joint name="${name}_wheel_joint" type="continuous">
+            <parent link="${name}_steering"/>
+            <child link="${name}_wheel"/>
+            <origin xyz="0 0 -0.025" rpy="${r*pi/2} 0 0"/>
+            <axis xyz="0 0 -1"/>
+        </joint>
+        <gazebo reference="${name}_wheel">
+            <material>Gazebo/Orange</material>
+        </gazebo>
+        <gazebo reference="${name}_steering">
+            <material>Gazebo/Yellow</material>
+        </gazebo>
+</xacro:macro>
+
+    <xacro:macro name="swerve_drive_ros2_control" params="name">
+        <joint name="${name}_wheel_joint">
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="max">10</param>
+            </command_interface>
+            <state_interface name="position" />
+            <state_interface name="velocity" />
+        </joint>
+        <joint name="${name}_steering_joint">
+            <command_interface name="position">
+                <param name="min">${-pi/3}</param>
+                <param name="max">${pi/3}</param>
+            </command_interface>
+            <command_interface name="velocity">
+                <param name="min">-10</param>
+                <param name="max">10</param>
+            </command_interface>
+            <state_interface name="position" />
+            <state_interface name="velocity" />
+        </joint>
+    </xacro:macro>
+</robot>
