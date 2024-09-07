@@ -48,28 +48,32 @@ def generate_launch_description():
 
     delayed_controller_manager = TimerAction(period=3.0, actions=[controller_manager])
 
-    ackermann_drive_spawner = Node(
+    robertito_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["ackermann_steering_controller"],
+        arguments=["robertito_controller"],
     )
 
-    delayed_ackermann_drive_spawner = RegisterEventHandler(
+    delayed_robertito_controller_spawner = RegisterEventHandler(
         event_handler=OnProcessStart(
             target_action=controller_manager,
-            on_start=[ackermann_drive_spawner],
+            on_start=[robertito_controller_spawner],
         )
     )
 
-    
+    joy_node = Node(
+            package='joy',
+            executable='joy_node',
+         )
+
     # Launch!
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
             description='Use sim time if true'),
-
         node_robot_state_publisher,
+        joy_node,       
         delayed_controller_manager,
-        delayed_ackermann_drive_spawner,
+        delayed_robertito_controller_spawner,
     ])

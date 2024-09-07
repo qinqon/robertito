@@ -3,12 +3,20 @@ controller_manager:
     update_rate: 30
     use_sim_time: true
 
+    robertito_controller:
+      type: ackermann_steering_controller/AckermannSteeringController
+    
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
     
-ackermann_steering_controller:
+robertito_controller:
   ros__parameters:
     type: ackermann_steering_controller/AckermannSteeringController
+    front_wheel_track: 0.230
+    rear_wheel_track: 0.230
+    wheelbase: 0.280
+    front_wheels_radius: 0.020
+    rear_wheels_radius: 0.020
     front_wheels_names:
       - front_right_steering_joint
       - front_left_steering_joint
