@@ -3,5 +3,15 @@ controller_manager:
     update_rate: 30
     use_sim_time: true
 
-    ackermann_controller:
-      type: ackerman_controller/AckermannController
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+    
+ackermann_steering_controller:
+  ros__parameters:
+    type: ackermann_steering_controller/AckermannSteeringController
+    front_wheels_names:
+      - front_right_steering_joint
+      - front_left_steering_joint
+    rear_wheels_names:
+      - rear_right_wheel_joint
+      - rear_left_wheel_joint

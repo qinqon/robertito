@@ -38,20 +38,15 @@
                 <param name="min">-10</param>
                 <param name="max">10</param>
             </command_interface>
-            <state_interface name="position" />
             <state_interface name="velocity" />
+            <state_interface name="position" />
         </joint>
         <joint name="${name}_steering_joint">
             <command_interface name="position">
                 <param name="min">${-pi/3}</param>
                 <param name="max">${pi/3}</param>
             </command_interface>
-            <command_interface name="velocity">
-                <param name="min">-10</param>
-                <param name="max">10</param>
-            </command_interface>
             <state_interface name="position" />
-            <state_interface name="velocity" />
         </joint>
     </xacro:macro>
 </robot>

@@ -14,139 +14,181 @@ namespace robertito
 hardware_interface::CallbackReturn RobertitoDriver::on_init(
   const hardware_interface::HardwareInfo & info)
 {
+
+  RCLCPP_INFO(
+      rclcpp::get_logger("RobertitoDriver"),
+      "RobertitoDriver::on_init() - BEGIN");
+
   if (
     hardware_interface::SystemInterface::on_init(info) !=
     hardware_interface::CallbackReturn::SUCCESS)
   {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("RobertitoDriver"),
+      "RobertitoDriver::on_init() - Failed to initialize");
     return hardware_interface::CallbackReturn::ERROR;
   }
 
-  hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-  hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  // Check if the number of joints is correct based on the mode of operation
+  if (info_.joints.size() != 8)
+  {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("RobertitoDriver"),
+      "RobertitoDriver::on_init() - Failed to initialize, "
+      "because the number of joints %ld is not 8.",
+      info_.joints.size());
+    return hardware_interface::CallbackReturn::ERROR;
+  }
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
-    // RRBotSystemPositionOnly has exactly one state and command interface on each joint
-    if (joint.command_interfaces.size() != 1)
-    {
-      RCLCPP_FATAL(
-        rclcpp::get_logger("RobertitoDriver"),
-        "Joint '%s' has %zu command interfaces found. 1 expected.", joint.name.c_str(),
-        joint.command_interfaces.size());
-      return hardware_interface::CallbackReturn::ERROR;
-    }
+    bool joint_is_steering = joint.name.find("steering") != std::string::npos;
 
-    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION)
+    // Steering joints have a position command interface and a position state interface
+    if (joint_is_steering)
     {
-      RCLCPP_FATAL(
-        rclcpp::get_logger("RobertitoDriver"),
-        "Joint '%s' have %s command interfaces found. '%s' expected.", joint.name.c_str(),
-        joint.command_interfaces[0].name.c_str(), hardware_interface::HW_IF_POSITION);
-      return hardware_interface::CallbackReturn::ERROR;
-    }
+      RCLCPP_INFO(
+        rclcpp::get_logger("RobertitoDriver"), "Joint '%s' is a steering joint.",
+        joint.name.c_str());
 
-    if (joint.state_interfaces.size() != 1)
-    {
-      RCLCPP_FATAL(
-        rclcpp::get_logger("RobertitoDriver"),
-        "Joint '%s' has %zu state interface. 1 expected.", joint.name.c_str(),
-        joint.state_interfaces.size());
-      return hardware_interface::CallbackReturn::ERROR;
-    }
+      if (joint.command_interfaces.size() != 1)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %zu command interfaces found. 1 expected.", joint.name.c_str(),
+          joint.command_interfaces.size());
+        return hardware_interface::CallbackReturn::ERROR;
+      }
 
-    if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
+      if (joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %s command interface. '%s' expected.", joint.name.c_str(),
+          joint.command_interfaces[0].name.c_str(), hardware_interface::HW_IF_POSITION);
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+
+      if (joint.state_interfaces.size() != 1)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %zu state interface. 1 expected.", joint.name.c_str(),
+          joint.state_interfaces.size());
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+
+      if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %s state interface. '%s' expected.", joint.name.c_str(),
+          joint.state_interfaces[0].name.c_str(), hardware_interface::HW_IF_POSITION);
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+    }
+    else
     {
-      RCLCPP_FATAL(
-        rclcpp::get_logger("RobertitoDriver"),
-        "Joint '%s' have %s state interface. '%s' expected.", joint.name.c_str(),
-        joint.state_interfaces[0].name.c_str(), hardware_interface::HW_IF_POSITION);
-      return hardware_interface::CallbackReturn::ERROR;
+      RCLCPP_INFO(
+        rclcpp::get_logger("RobertitoDriver"), "Joint '%s' is a drive joint.",
+        joint.name.c_str());
+
+      // Drive joints have a velocity command interface and a velocity state interface
+      if (joint.command_interfaces.size() != 1)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %zu command interfaces found. 1 expected.", joint.name.c_str(),
+          joint.command_interfaces.size());
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+
+      if (joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %s command interface. '%s' expected.", joint.name.c_str(),
+          joint.command_interfaces[0].name.c_str(), hardware_interface::HW_IF_VELOCITY);
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+
+      if (joint.state_interfaces.size() != 2)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %zu state interface. 2 expected.", joint.name.c_str(),
+          joint.state_interfaces.size());
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+
+      if (joint.state_interfaces[0].name != hardware_interface::HW_IF_VELOCITY)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %s state interface. '%s' expected.", joint.name.c_str(),
+          joint.state_interfaces[1].name.c_str(), hardware_interface::HW_IF_VELOCITY);
+        return hardware_interface::CallbackReturn::ERROR;
+      }
+
+      if (joint.state_interfaces[1].name != hardware_interface::HW_IF_POSITION)
+      {
+        RCLCPP_FATAL(
+          rclcpp::get_logger("RobertitoDriver"),
+          "Joint '%s' has %s state interface. '%s' expected.", joint.name.c_str(),
+          joint.state_interfaces[1].name.c_str(), hardware_interface::HW_IF_POSITION);
+        return hardware_interface::CallbackReturn::ERROR;
+      }
     }
   }
 
-  // RobertitoDriver has exactly two GPIO components
-  if (info_.gpios.size() != 2)
-  {
-    RCLCPP_FATAL(
+  hw_interfaces_["traction"].emplace_back("front_left_wheel_joint");
+  hw_interfaces_["traction"].emplace_back("front_right_wheel_joint");
+  hw_interfaces_["traction"].emplace_back("rear_left_wheel_joint");
+  hw_interfaces_["traction"].emplace_back("rear_right_wheel_joint");
+  
+  hw_interfaces_["steering"].emplace_back("front_left_steering_joint");
+  hw_interfaces_["steering"].emplace_back("front_right_steering_joint");
+  hw_interfaces_["steering"].emplace_back("rear_left_steering_joint");
+  hw_interfaces_["steering"].emplace_back("rear_right_steering_joint");
+
+
+  RCLCPP_INFO(
       rclcpp::get_logger("RobertitoDriver"),
-      "RobertitoDriver has '%ld' GPIO components, '%d' expected.", info_.gpios.size(),
-      2);
-    return hardware_interface::CallbackReturn::ERROR;
-  }
-  // with exactly 1 command interface
-  for (int i = 0; i < 2; i++)
-  {
-    if (info_.gpios[i].command_interfaces.size() != 1)
-    {
-      RCLCPP_FATAL(
-        rclcpp::get_logger("RobertitoDriver"),
-        "GPIO component %s has '%ld' command interfaces, '%d' expected.",
-        info_.gpios[i].name.c_str(), info_.gpios[i].command_interfaces.size(), 1);
-      return hardware_interface::CallbackReturn::ERROR;
-    }
-  }
-  // and 3/1 state interfaces, respectively
-  if (info_.gpios[0].state_interfaces.size() != 3)
-  {
-    RCLCPP_FATAL(
-      rclcpp::get_logger("RobertitoDriver"),
-      "GPIO component %s has '%ld' state interfaces, '%d' expected.", info_.gpios[0].name.c_str(),
-      info_.gpios[0].state_interfaces.size(), 3);
-    return hardware_interface::CallbackReturn::ERROR;
-  }
-  if (info_.gpios[1].state_interfaces.size() != 1)
-  {
-    RCLCPP_FATAL(
-      rclcpp::get_logger("RobertitoDriver"),
-      "GPIO component %s has '%ld' state interfaces, '%d' expected.", info_.gpios[0].name.c_str(),
-      info_.gpios[0].state_interfaces.size(), 1);
-    return hardware_interface::CallbackReturn::ERROR;
-  }
+      "RobertitoDriver::on_init() - SUCCESS");
 
-  return hardware_interface::CallbackReturn::SUCCESS;
-}
-
-hardware_interface::CallbackReturn RobertitoDriver::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
-{
-  // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Configuring ...please wait...");
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
-
-  // reset values always when configuring hardware
-  std::fill(hw_states_.begin(), hw_states_.end(), 0);
-  std::fill(hw_commands_.begin(), hw_commands_.end(), 0);
-  std::fill(hw_gpio_in_.begin(), hw_gpio_in_.end(), 0);
-  std::fill(hw_gpio_out_.begin(), hw_gpio_out_.end(), 0);
-
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Successfully configured!");
-
-  return hardware_interface::CallbackReturn::SUCCESS;
+  return hardware_interface::CallbackReturn::SUCCESS; 
 }
 
 std::vector<hardware_interface::StateInterface>
 RobertitoDriver::export_state_interfaces()
 {
   std::vector<hardware_interface::StateInterface> state_interfaces;
-  for (uint i = 0; i < info_.joints.size(); i++)
+
+  for (auto & joints : hw_interfaces_)
   {
-    state_interfaces.emplace_back(hardware_interface::StateInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_states_[i]));
+    for(auto & joint : joints.second) {
+      state_interfaces.emplace_back(hardware_interface::StateInterface(
+        joint.joint_name, hardware_interface::HW_IF_POSITION, &joint.state.position));
+    }
+
+    if (joints.first == "traction")
+    {
+      for(auto & joint : joints.second) {
+        state_interfaces.emplace_back(hardware_interface::StateInterface(
+          joint.joint_name, hardware_interface::HW_IF_VELOCITY, &joint.state.velocity));
+      }
+    }
   }
 
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "State interfaces:");
-  hw_gpio_in_.resize(4);
-  size_t ct = 0;
-  for (size_t i = 0; i < info_.gpios.size(); i++)
+  RCLCPP_INFO(
+    rclcpp::get_logger("RobertitoDriver"), "Exported %zu state interfaces.",
+    state_interfaces.size());
+
+  for (auto s : state_interfaces)
   {
-    for (auto state_if : info_.gpios.at(i).state_interfaces)
-    {
-      state_interfaces.emplace_back(hardware_interface::StateInterface(
-        info_.gpios.at(i).name, state_if.name, &hw_gpio_in_[ct++]));
-      RCLCPP_INFO(
-        rclcpp::get_logger("RobertitoDriver"), "Added %s/%s",
-        info_.gpios.at(i).name.c_str(), state_if.name.c_str());
-    }
+    RCLCPP_INFO(
+      rclcpp::get_logger("RobertitoDriver"), "Exported state interface '%s'.",
+      s.get_name().c_str());
   }
 
   return state_interfaces;
@@ -156,24 +198,36 @@ std::vector<hardware_interface::CommandInterface>
 RobertitoDriver::export_command_interfaces()
 {
   std::vector<hardware_interface::CommandInterface> command_interfaces;
-  for (uint i = 0; i < info_.joints.size(); i++)
+
+  for (auto & joints : hw_interfaces_)
   {
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands_[i]));
-  }
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Command interfaces:");
-  hw_gpio_out_.resize(2);
-  size_t ct = 0;
-  for (size_t i = 0; i < info_.gpios.size(); i++)
-  {
-    for (auto command_if : info_.gpios.at(i).command_interfaces)
+    if (joints.first == "steering")
     {
-      command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        info_.gpios.at(i).name, command_if.name, &hw_gpio_out_[ct++]));
-      RCLCPP_INFO(
-        rclcpp::get_logger("RobertitoDriver"), "Added %s/%s",
-        info_.gpios.at(i).name.c_str(), command_if.name.c_str());
+      for(auto & joint : joints.second) {
+        command_interfaces.emplace_back(hardware_interface::CommandInterface(
+          joint.joint_name, hardware_interface::HW_IF_POSITION,
+          &joint.command.position));
+      }
     }
+    else if (joints.first == "traction")
+    {
+      for(auto & joint : joints.second) {
+        command_interfaces.emplace_back(hardware_interface::CommandInterface(
+          joint.joint_name, hardware_interface::HW_IF_VELOCITY,
+          &joint.command.velocity));
+      }
+    }
+  }
+
+  RCLCPP_INFO(
+    rclcpp::get_logger("RobertitoDriver"), "Exported %zu command interfaces.",
+    command_interfaces.size());
+
+  for (auto i = 0u; i < command_interfaces.size(); i++)
+  {
+    RCLCPP_INFO(
+      rclcpp::get_logger("RobertitoDriver"), "Exported command interface '%s'.",
+      command_interfaces[i].get_name().c_str());
   }
 
   return command_interfaces;
@@ -182,16 +236,25 @@ RobertitoDriver::export_command_interfaces()
 hardware_interface::CallbackReturn RobertitoDriver::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
   RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Activating ...please wait...");
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
-  // command and state should be equal when starting
-  for (uint i = 0; i < hw_states_.size(); i++)
+  for (auto & joints : hw_interfaces_)
   {
-    hw_commands_[i] = hw_states_[i];
-  }
+      for(auto & joint : joints.second) {
+    	joint.state.position = 0.0;
 
+    	if (joints.first == "traction")
+    	{
+      	  joint.state.velocity = 0.0;
+          joint.command.velocity = 0.0;
+        }
+        else if (joints.first == "steering")
+        {
+          joint.command.position = 0.0;
+        }
+      }
+  }
+  
   RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -201,40 +264,41 @@ hardware_interface::CallbackReturn RobertitoDriver::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Successfully deactivated!");
+  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Deactivating ...please wait...");
+
   // END: This part here is for exemplary purposes - Please do not copy to your production code
+  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Successfully deactivated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::return_type RobertitoDriver::read(
-  const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
+  const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Reading...");
-
-  for (uint i = 0; i < hw_states_.size(); i++)
+    
+  for (auto & joints : hw_interfaces_) 
   {
-    // Simulate RRBot's movement
-    hw_states_[i] = hw_states_[i] + (hw_commands_[i] - hw_states_[i]);
+    if (joints.first == "steering") {
+    	for (auto &joint : joints.second) {
+		joint.state.position = joint.command.position;
+		RCLCPP_INFO(
+    			rclcpp::get_logger("RobertitoDriver"), "Got position state: %.2f for joint '%s'.",
+    			joint.command.position, joint.joint_name.c_str());
+
+	}
+    }
+    if (joints.first == "traction") {
+    	for (auto &joint : joints.second) {
+		joint.state.velocity= joint.command.velocity;
+		joint.state.position = joint.command.velocity * period.seconds();
+		RCLCPP_INFO(
+    			rclcpp::get_logger("RobertitoDriver"), "Got velocity state: %.2f for joint '%s'.",
+    			joint.command.velocity, joint.joint_name.c_str());
+  	}
+    }
   }
 
-  // mirror GPIOs back
-  hw_gpio_in_[0] = hw_gpio_out_[0];
-  hw_gpio_in_[3] = hw_gpio_out_[1];
-  // random inputs
-  unsigned int seed = time(NULL) + 1;
-  hw_gpio_in_[1] = static_cast<float>(rand_r(&seed));
-  seed = time(NULL) + 2;
-  hw_gpio_in_[2] = static_cast<float>(rand_r(&seed));
-
-  for (uint i = 0; i < hw_gpio_in_.size(); i++)
-  {
-    RCLCPP_INFO(
-      rclcpp::get_logger("RobertitoDriver"), "Read %.1f from GP input %d!",
-      hw_gpio_in_[i], i);
-  }
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "GPIOs successfully read!");
   // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;
@@ -244,15 +308,26 @@ hardware_interface::return_type RobertitoDriver::write(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Writing...");
-
-  for (uint i = 0; i < hw_gpio_out_.size(); i++)
+ 
+  for (auto & joints : hw_interfaces_) 
   {
-    RCLCPP_INFO(
-      rclcpp::get_logger("RobertitoDriver"), "Got command %.1f for GP output %d!",
-      hw_gpio_out_[i], i);
+    if (joints.first == "steering") {
+    	for (auto &joint : joints.second) {
+		RCLCPP_INFO(
+    			rclcpp::get_logger("RobertitoDriver"), "Got position command: %.2f for joint '%s'.",
+    			joint.command.position, joint.joint_name.c_str());
+
+	}
+    }
+    if (joints.first == "traction") {
+    	for (auto &joint : joints.second) {
+		RCLCPP_INFO(
+    			rclcpp::get_logger("RobertitoDriver"), "Got velocity command: %.2f for joint '%s'.",
+    			joint.command.velocity, joint.joint_name.c_str());
+  	}
+    }
   }
-  RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "GPIOs successfully written!");
+
   // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;

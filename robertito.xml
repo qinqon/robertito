@@ -1,4 +1,4 @@
-<library path="robertito">
+<library path="robertito_driver">
   <class name="robertito/RobertitoDriver"
          type="robertito::RobertitoDriver"
          base_class_type="hardware_interface::SystemInterface">

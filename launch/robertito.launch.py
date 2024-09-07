@@ -51,7 +51,7 @@ def generate_launch_description():
     ackermann_drive_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["acermann_controller"],
+        arguments=["ackermann_steering_controller"],
     )
 
     delayed_ackermann_drive_spawner = RegisterEventHandler(

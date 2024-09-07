@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
@@ -15,6 +16,27 @@
 
 namespace robertito
 {
+struct JointValue
+{
+  double position{0.0};
+  double velocity{0.0};
+  double effort{0.0};
+};
+
+struct Joint
+{
+  explicit Joint(const std::string & name) : joint_name(name)
+  {
+    state = JointValue();
+    command = JointValue();
+  }
+
+  Joint() = default;
+
+  std::string joint_name;
+  JointValue state;
+  JointValue command;
+};
 class RobertitoDriver: public hardware_interface::SystemInterface
 {
 public:
@@ -22,9 +44,6 @@ public:
 
   hardware_interface::CallbackReturn on_init(
     const hardware_interface::HardwareInfo & info) override;
-
-  hardware_interface::CallbackReturn on_configure(
-    const rclcpp_lifecycle::State & previous_state) override;
 
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
 
@@ -43,13 +62,8 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
-  // Parameters for the Robertito simulation
 
-  // Store the command and state interfaces for the simulated robot
-  std::vector<double> hw_commands_;
-  std::vector<double> hw_states_;
-  std::vector<double> hw_gpio_in_;
-  std::vector<double> hw_gpio_out_;
+  std::map<std::string, std::vector<Joint>> hw_interfaces_;
 };
 
 }  // namespace robertito
