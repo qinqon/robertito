@@ -61,10 +61,19 @@ def generate_launch_description():
         )
     )
 
+    joy_params_file = os.path.join(get_package_share_directory(package_name),'config','joy.yaml')
     joy_node = Node(
             package='joy',
             executable='joy_node',
+            parameters=[joy_params_file],
          )
+    teleop_node = Node(
+            package='teleop_twist_joy', 
+            executable='teleop_node',
+            name = 'teleop_node',
+            parameters=[joy_params_file],
+            remappings=[('/cmd_vel', '/robertito_controller/reference')]
+            )
 
     # Launch!
     return LaunchDescription([
@@ -74,6 +83,7 @@ def generate_launch_description():
             description='Use sim time if true'),
         node_robot_state_publisher,
         joy_node,       
+        teleop_node,
         delayed_controller_manager,
         delayed_robertito_controller_spawner,
     ])
