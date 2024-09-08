@@ -10,9 +10,13 @@
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
+
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include "rclcpp/rclcpp.hpp"
+
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 namespace robertito
 {
@@ -25,7 +29,7 @@ struct JointValue
 
 struct Joint
 {
-  explicit Joint(const std::string & name) : joint_name(name)
+  explicit Joint(const std::string & name, const std::string & driver_name) : joint_name(name), driver_name(driver_name)
   {
     state = JointValue();
     command = JointValue();
@@ -34,10 +38,23 @@ struct Joint
   Joint() = default;
 
   std::string joint_name;
+  std::string driver_name;
   JointValue state;
   JointValue command;
 };
-class RobertitoDriver: public hardware_interface::SystemInterface
+
+class RobertitoDriverNode: public rclcpp::Node  //the node definition for the publisher to talk to micro-ROS agent
+{
+  public:
+    RobertitoDriverNode();
+    void publish(const std::string& driver_name, geometry_msgs::msg::TwistStamped message);
+
+  private:
+    std::map<std::string, rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr> driver_pubs_; 
+
+};
+
+class RobertitoDriver: public hardware_interface::SystemInterface, public rclcpp::Node
 {
 public:
   RCLCPP_SHARED_PTR_DEFINITIONS(RobertitoDriver)
@@ -63,7 +80,8 @@ public:
 
 private:
 
-  std::map<std::string, std::vector<Joint>> hw_interfaces_;
+ std::map<std::string, std::vector<Joint>> hw_interfaces_;
+ std::shared_ptr<RobertitoDriverNode> node_;
 };
 
 }  // namespace robertito

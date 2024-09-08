@@ -11,11 +11,22 @@
 
 namespace robertito
 {
+
+RobertitoDriverNode::RobertitoDriverNode() : Node("robertito_driver_node")
+{
+  driver_pubs_["front_left"] = this->create_publisher<geometry_msgs::msg::TwistStamped>("/robertito_driver/front_left", 10);
+  driver_pubs_["front_right"] = this->create_publisher<geometry_msgs::msg::TwistStamped>("/robertito_driver/front_right", 10);
+  driver_pubs_["rear_left"] = this->create_publisher<geometry_msgs::msg::TwistStamped>("/robertito_driver/rear_left", 10);
+  driver_pubs_["rear_right"] = this->create_publisher<geometry_msgs::msg::TwistStamped>("/robertito_driver/rear_right", 10);
+  
+
+}
+
 hardware_interface::CallbackReturn RobertitoDriver::on_init(
   const hardware_interface::HardwareInfo & info)
 {
 
-  RCLCPP_INFO(
+    RCLCPP_INFO(
       rclcpp::get_logger("RobertitoDriver"),
       "RobertitoDriver::on_init() - BEGIN");
 
@@ -141,15 +152,16 @@ hardware_interface::CallbackReturn RobertitoDriver::on_init(
     }
   }
 
-  hw_interfaces_["traction"].emplace_back("front_left_wheel_joint");
-  hw_interfaces_["traction"].emplace_back("front_right_wheel_joint");
-  hw_interfaces_["traction"].emplace_back("rear_left_wheel_joint");
-  hw_interfaces_["traction"].emplace_back("rear_right_wheel_joint");
+  hw_interfaces_["traction"].emplace_back("front_left_wheel_joint", "front_left");
+  hw_interfaces_["traction"].emplace_back("front_right_wheel_joint", "front_right");
+  hw_interfaces_["traction"].emplace_back("rear_left_wheel_joint", "rear_left");
+  hw_interfaces_["traction"].emplace_back("rear_right_wheel_joint", "rear_right");
   
-  hw_interfaces_["steering"].emplace_back("front_left_steering_joint");
-  hw_interfaces_["steering"].emplace_back("front_right_steering_joint");
-  hw_interfaces_["steering"].emplace_back("rear_left_steering_joint");
-  hw_interfaces_["steering"].emplace_back("rear_right_steering_joint");
+  hw_interfaces_["steering"].emplace_back("front_left_steering_joint", "front_left");
+  hw_interfaces_["steering"].emplace_back("front_right_steering_joint", "front_right");
+  hw_interfaces_["steering"].emplace_back("rear_left_steering_joint", "rear_left");
+  hw_interfaces_["steering"].emplace_back("rear_right_steering_joint", "rear_right");
+  
 
 
   RCLCPP_INFO(
@@ -254,7 +266,9 @@ hardware_interface::CallbackReturn RobertitoDriver::on_activate(
         }
       }
   }
-  
+
+  this->node_ = std::make_shared<RobertitoDriverNode>();
+
   RCLCPP_INFO(rclcpp::get_logger("RobertitoDriver"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -303,27 +317,38 @@ hardware_interface::return_type RobertitoDriver::write(
 {
   // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
  
-  for (auto & joints : hw_interfaces_) 
+  for (auto driver: std::vector<std::string>({"front_left", "front_right", "rear_left", "rear_right"})) 
   {
-    if (joints.first == "steering") {
-    	for (auto &joint : joints.second) {
-		if (joint.command.position > 0) {
+    auto message = geometry_msgs::msg::TwistStamped();
+    for (auto & joints : hw_interfaces_) 
+    {
+    	for (auto &joint : joints.second) 
+	{
+	    if (joint.driver_name != driver) 
+            { 
+               continue;
+	    }
+	    if (joints.first == "steering")
+	    {
+              message.angular.z = joint.command.position
+	      if (joint.command.position > 0) {
 		  RCLCPP_INFO(
     			rclcpp::get_logger("RobertitoDriver"), "Got position command: %.2f for joint '%s'.",
     			joint.command.position, joint.joint_name.c_str());
 		}
-
-	}
-    }
-    if (joints.first == "traction") {
-    	for (auto &joint : joints.second) {
-		if (joint.command.velocity> 0) {
+	    }
+	    else if (joints.first == "traction")
+	    {
+              message.linear.x = joint.command.velocity
+	      if (joint.command.velocity> 0) {
 		  RCLCPP_INFO(
     			rclcpp::get_logger("RobertitoDriver"), "Got velocity command: %.2f for joint '%s'.",
     			joint.command.velocity, joint.joint_name.c_str());
 		}
-  	}
+	    }
+	}
     }
+    node_->publish(driver, message);
   }
 
   // END: This part here is for exemplary purposes - Please do not copy to your production code
