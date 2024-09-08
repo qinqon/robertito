@@ -282,9 +282,6 @@ hardware_interface::return_type RobertitoDriver::read(
     if (joints.first == "steering") {
     	for (auto &joint : joints.second) {
 		joint.state.position = joint.command.position;
-		RCLCPP_INFO(
-    			rclcpp::get_logger("RobertitoDriver"), "Got position state: %.2f for joint '%s'.",
-    			joint.command.position, joint.joint_name.c_str());
 
 	}
     }
@@ -292,9 +289,6 @@ hardware_interface::return_type RobertitoDriver::read(
     	for (auto &joint : joints.second) {
 		joint.state.velocity= joint.command.velocity;
 		joint.state.position = joint.command.velocity * period.seconds();
-		RCLCPP_INFO(
-    			rclcpp::get_logger("RobertitoDriver"), "Got velocity state: %.2f for joint '%s'.",
-    			joint.command.velocity, joint.joint_name.c_str());
   	}
     }
   }
@@ -313,17 +307,21 @@ hardware_interface::return_type RobertitoDriver::write(
   {
     if (joints.first == "steering") {
     	for (auto &joint : joints.second) {
-		RCLCPP_INFO(
+		if (joint.command.position > 0) {
+		  RCLCPP_INFO(
     			rclcpp::get_logger("RobertitoDriver"), "Got position command: %.2f for joint '%s'.",
     			joint.command.position, joint.joint_name.c_str());
+		}
 
 	}
     }
     if (joints.first == "traction") {
     	for (auto &joint : joints.second) {
-		RCLCPP_INFO(
+		if (joint.command.velocity> 0) {
+		  RCLCPP_INFO(
     			rclcpp::get_logger("RobertitoDriver"), "Got velocity command: %.2f for joint '%s'.",
     			joint.command.velocity, joint.joint_name.c_str());
+		}
   	}
     }
   }
